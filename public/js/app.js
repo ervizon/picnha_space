@@ -67,9 +67,17 @@ const lightboxDate = document.getElementById('lightboxDate');
 // ======================== INITIALIZATION ========================
 
 document.addEventListener('DOMContentLoaded', () => {
+  try { localStorage.removeItem('pincha_dates_backup'); } catch (e) {}
   initEventListeners();
   loadDates();
   initIcons();
+
+  // Auto-sync across devices (laptop & handphone) when switching tabs or every 4 seconds
+  window.addEventListener('focus', () => syncDatesSilently());
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') syncDatesSilently();
+  });
+  setInterval(syncDatesSilently, 4000);
 });
 
 function initIcons() {
@@ -148,23 +156,10 @@ async function loadDates() {
     emptyState.classList.add('hidden');
     datesGrid.innerHTML = '';
 
-    const res = await fetch('/api/dates');
+    const res = await fetch('/api/dates?t=' + Date.now(), { cache: 'no-store' });
     const json = await res.json();
     if (json.success) {
       allDates = json.data;
-      if (allDates.length > 0) {
-        try { localStorage.setItem('pincha_dates_backup', JSON.stringify(allDates)); } catch (e) {}
-      } else {
-        const cached = localStorage.getItem('pincha_dates_backup');
-        if (cached) {
-          try {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              allDates = parsed;
-            }
-          } catch (e) {}
-        }
-      }
       updateStats();
       updateHeroCountdown();
       renderDates();
@@ -178,6 +173,29 @@ async function loadDates() {
     });
   } finally {
     loadingState.classList.add('hidden');
+  }
+}
+
+async function syncDatesSilently() {
+  // Jangan ganggu jika sedang membuka modal form
+  const isModalOpen = !modalDateForm.classList.contains('hidden') || !modalUploadPhotos.classList.contains('hidden');
+  if (isModalOpen) return;
+
+  try {
+    const res = await fetch('/api/dates?t=' + Date.now(), { cache: 'no-store' });
+    const json = await res.json();
+    if (json.success) {
+      const currentJson = JSON.stringify(allDates);
+      const nextJson = JSON.stringify(json.data);
+      if (currentJson !== nextJson) {
+        allDates = json.data;
+        updateStats();
+        updateHeroCountdown();
+        renderDates();
+      }
+    }
+  } catch (e) {
+    // Silent background check ignore network hiccups
   }
 }
 

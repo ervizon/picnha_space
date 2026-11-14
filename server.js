@@ -49,17 +49,8 @@ function writeDates(dates) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(dates, null, 2), 'utf-8');
 }
 
-// Multer storage for uploaded photos
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, UPLOADS_DIR);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-    cb(null, 'date-photo-' + uniqueSuffix + ext);
-  }
-});
+// Multer storage for uploaded photos (memoryStorage so photos can be embedded as Data URLs on serverless & saved locally)
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -75,8 +66,16 @@ const upload = multer({
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+
+// Prevent caching on all API routes so laptop & handphone are always in sync
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
 app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -198,13 +197,18 @@ app.post('/api/dates/:id/photos', upload.array('photos', 10), (req, res) => {
 
     const captions = req.body.captions ? (Array.isArray(req.body.captions) ? req.body.captions : [req.body.captions]) : [];
 
-    const newPhotos = req.files.map((file, i) => ({
-      id: uuidv4(),
-      filename: file.filename,
-      url: `/uploads/${file.filename}`,
-      caption: captions[i] || '',
-      uploadedAt: new Date().toISOString()
-    }));
+    const newPhotos = req.files.map((file, i) => {
+      const base64Data = file.buffer.toString('base64');
+      const mimeType = file.mimetype || 'image/jpeg';
+      const dataUrl = `data:${mimeType};base64,${base64Data}`;
+      return {
+        id: uuidv4(),
+        filename: file.originalname || `photo-${Date.now()}.jpg`,
+        url: dataUrl,
+        caption: captions[i] || '',
+        uploadedAt: new Date().toISOString()
+      };
+    });
 
     if (!dateObj.photos) dateObj.photos = [];
     dateObj.photos.push(...newPhotos);
