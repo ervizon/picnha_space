@@ -152,6 +152,19 @@ async function loadDates() {
     const json = await res.json();
     if (json.success) {
       allDates = json.data;
+      if (allDates.length > 0) {
+        try { localStorage.setItem('pincha_dates_backup', JSON.stringify(allDates)); } catch (e) {}
+      } else {
+        const cached = localStorage.getItem('pincha_dates_backup');
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              allDates = parsed;
+            }
+          } catch (e) {}
+        }
+      }
       updateStats();
       updateHeroCountdown();
       renderDates();
@@ -821,9 +834,51 @@ function initDropzone() {
   });
 }
 
-function handleFilesSelected(files) {
+function compressImageFile(file, maxWidth = 1200, quality = 0.8) {
+  return new Promise((resolve) => {
+    if (file.type === 'image/svg+xml' || file.type === 'image/gif') {
+      return resolve(file);
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => {
+          if (!blob) return resolve(file);
+          const safeName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+          const compressed = new File([blob], safeName, { type: 'image/jpeg' });
+          resolve(compressed);
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleFilesSelected(files) {
   const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
-  selectedFiles.push(...validFiles);
+  for (const file of validFiles) {
+    try {
+      const compressed = await compressImageFile(file);
+      selectedFiles.push(compressed);
+    } catch (err) {
+      selectedFiles.push(file);
+    }
+  }
   renderSelectedPhotosPreview();
 }
 

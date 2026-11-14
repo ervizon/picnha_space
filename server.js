@@ -8,17 +8,29 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Directories setup
-const DATA_DIR = path.join(__dirname, 'data');
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const os = require('os');
+
+// Directories setup (compatible with standard servers and Vercel serverless)
+const isVercel = Boolean(process.env.VERCEL);
+const DATA_DIR = isVercel ? path.join(os.tmpdir(), 'pincha_data') : path.join(__dirname, 'data');
+const UPLOADS_DIR = isVercel ? path.join(os.tmpdir(), 'pincha_uploads') : path.join(__dirname, 'uploads');
 const DATA_FILE = path.join(DATA_DIR, 'dates.json');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
-// Seed sample data if empty
+// Seed empty data if missing
 if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2), 'utf-8');
+  const seedPath = path.join(__dirname, 'data', 'dates.json');
+  if (fs.existsSync(seedPath)) {
+    try {
+      fs.copyFileSync(seedPath, DATA_FILE);
+    } catch (e) {
+      fs.writeFileSync(DATA_FILE, '[]', 'utf-8');
+    }
+  } else {
+    fs.writeFileSync(DATA_FILE, '[]', 'utf-8');
+  }
 }
 
 // Helper read/write
@@ -296,6 +308,10 @@ app.get('/api/stats', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`💖 Pincha Space server running at http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`💖 Pincha Space server running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
