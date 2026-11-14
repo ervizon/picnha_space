@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --primary: #f43f5e;
+  --primary-light: #ffe4e6;
+  --primary-dark: #e11d48;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #fffafb;
+  color: #334155;
+}
+
+.font-handwriting {
+  font-family: 'Caveat', cursive;
+}
+
+/* Glassmorphism effects */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(244, 63, 94, 0.12);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(244, 63, 94, 0.1);
+}
+
+/* Custom romantic gradient backgrounds */
+.bg-romantic-gradient {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 50%, #fecdd3 100%);
+}
+
+.bg-hero-pattern {
+  background-color: #fff1f2;
+  background-image: radial-gradient(#f43f5e 0.75px, transparent 0.75px), radial-gradient(#fda4af 0.75px, #fff1f2 0.75px);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+}
+
+/* Smooth pulse animation */
+@keyframes heartFloat {
+  0% { transform: translateY(0px) rotate(0deg); opacity: 0.8; }
+  50% { transform: translateY(-8px) rotate(4deg); opacity: 1; }
+  100% { transform: translateY(0px) rotate(0deg); opacity: 0.8; }
+}
+
+.animate-heart-float {
+  animation: heartFloat 3s ease-in-out infinite;
+}
+
+/* Polaroid Photo Style */
+.polaroid-card {
+  background: #ffffff;
+  padding: 8px 8px 24px 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #f1f5f9;
+}
+
+.polaroid-card:hover {
+  transform: translateY(-4px) rotate(-1deg);
+  box-shadow: 0 12px 25px rgba(244, 63, 94, 0.15);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #fff1f2;
+}
+::-webkit-scrollbar-thumb {
+  background: #fda4af;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #f43f5e;
+}
