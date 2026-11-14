@@ -3,7 +3,8 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
+const uuidv4 = () => crypto.randomUUID();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -309,7 +310,7 @@ app.get('/api/stats', (req, res) => {
 });
 
 // Serve frontend for all remaining routes
-app.get('*', (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
