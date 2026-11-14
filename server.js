@@ -308,6 +308,11 @@ app.get('/api/stats', (req, res) => {
   });
 });
 
+// Serve frontend for all remaining routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`💖 Pincha Space server running at http://localhost:${PORT}`);
